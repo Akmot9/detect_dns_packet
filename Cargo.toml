@@ -1,0 +1,16 @@
+[package]
+name = "detect_dns_packet"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+hex = "0.4.3"
+
+[lib]
+name = "detect_dns_packet"
+path = "src/lib.rs"
+
+
+
+
+
