@@ -1,20 +1,14 @@
+mod dns_header;
 mod dns_types;
 mod dns_class;
-mod dns_flags;
 
 use std::{error::Error, fmt};
-
+use dns_header::DnsHeader;
 use dns_types::DnsType;
 use dns_class::DnsClass;
-use dns_flags::verify_dns_flags;
 
-struct DnsPacket {
-    transaction_id: u16,
-    flags: u16,
-    questions: u16,
-    answers_rr: u16,
-    authorities_rr: u16,
-    additionals_rr: u16,
+pub struct DnsPacket {
+    header: DnsHeader,
     queries: Vec<Query>,
     answers: Option<Vec<Answer>>,       // List of answer records
     authorities: Option<Vec<AuthoritativeNameServer>>, // List of authority records
@@ -26,38 +20,14 @@ impl TryFrom<&[u8]> for DnsPacket {
     type Error = Box<dyn Error>;
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-        println!("bytes lenght: {:?}", bytes.len());
-        if bytes.len() < 12 {
-            println!("Too short to be a DNS packet {}", bytes.len());
-            return Err("Too short to be a DNS packet".into());
-        }
-
-        let transaction_id = u16::from_be_bytes([bytes[0], bytes[1]]);
-        println!("transaction_id: {}", &transaction_id);
-        let flags = verify_dns_flags(u16::from_be_bytes([bytes[2], bytes[3]]))?;
-        println!("flags: {}", &flags);
-        let questions = u16::from_be_bytes([bytes[4], bytes[5]]);
-        println!("questions: {}", &questions);
-        let answers_rr = u16::from_be_bytes([bytes[6], bytes[7]]);
-        println!("answers_rr: {}", &answers_rr);
-        let authorities_rr = u16::from_be_bytes([bytes[8], bytes[9]]);
-        println!("authorities_rr: {}", &authorities_rr);
-        let additionals_rr = u16::from_be_bytes([bytes[10], bytes[11]]);
-        println!("additionals_rr: {}", &additionals_rr);
-
-        // Placeholder for actual parsing logic for queries and other records
+        let header = DnsHeader::try_from(bytes)?;
         let queries = Vec::new();
         let answers = None;
         let authorities = None;
         let additionals = None;
 
         Ok(DnsPacket {
-            transaction_id,
-            flags,
-            questions,
-            answers_rr,
-            authorities_rr,
-            additionals_rr,
+            header,
             queries,
             answers,
             authorities,
@@ -70,13 +40,8 @@ impl fmt::Display for DnsPacket {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "DnsPacket {{ transaction_id: {}, flags: {}, questions: {}, answers_rr: {}, authorities_rr: {}, additionals_rr: {}",
-            self.transaction_id,
-            self.flags,
-            self.questions,
-            self.answers_rr,
-            self.authorities_rr,
-            self.additionals_rr,
+            "DnsPacket {{ Dns_header: {}",
+            self.header
         )?;
         write!(f, ", queries: [")?;
         for query in &self.queries {
@@ -111,8 +76,8 @@ impl fmt::Display for DnsPacket {
 #[derive(Debug)]
 struct Query {
     name: String,               // Domain name
-    query_type: DnsType,            // Type of query (e.g., A, AAAA, MX, etc.)
-    query_class: DnsClass,           // Class of query (typically IN for Internet)
+    query_type: DnsType,        // Type of query (e.g., A, AAAA, MX, etc.)
+    query_class: DnsClass,      // Class of query (typically IN for Internet)
 }
 
 impl fmt::Display for Query {
@@ -125,8 +90,8 @@ impl fmt::Display for Query {
 #[derive(Debug)]
 struct Answer {
     name: String,               // Domain name
-    answer_type: DnsType,           // Type of record (e.g., A, AAAA, MX, etc.)
-    answer_class: DnsClass,          // Class of record (typically IN for Internet)
+    answer_type: DnsType,       // Type of record (e.g., A, AAAA, MX, etc.)
+    answer_class: DnsClass,     // Class of record (typically IN for Internet)
     ttl: u32,                   // Time to live
     data_length: u16,           // Length of the data
     address: Vec<u8>,           // Address or other data (variable length)
@@ -145,8 +110,8 @@ impl fmt::Display for Answer {
 #[derive(Debug)]
 struct AuthoritativeNameServer {
     name: String,               // Domain name
-    answer_type: DnsType,           // Type of record
-    answer_class: DnsClass,          // Class of record
+    answer_type: DnsType,       // Type of record
+    answer_class: DnsClass,     // Class of record
     ttl: u32,                   // Time to live
     data_length: u16,           // Length of the data
     address: Vec<u8>,           // Address or other data (variable length)
@@ -165,8 +130,8 @@ impl fmt::Display for AuthoritativeNameServer {
 #[derive(Debug)]
 struct AdditionalRecord {
     name: String,               // Domain name
-    answer_type: DnsType,           // Type of record
-    answer_class: DnsClass,          // Class of record
+    answer_type: DnsType,       // Type of record
+    answer_class: DnsClass,     // Class of record
     ttl: u32,                   // Time to live
     data_length: u16,           // Length of the data
     address: Vec<u8>,           // Address or other data (variable length)
@@ -194,12 +159,12 @@ mod tests {
         match DnsPacket::try_from(data.as_slice()) {
             Ok(packet) => {
                 println!("{}", packet);
-                assert_eq!(packet.transaction_id, 0x002b);
-                assert_eq!(packet.flags, 0x8180);
-                assert_eq!(packet.questions, 1);
-                assert_eq!(packet.answers_rr, 15);
-                assert_eq!(packet.authorities_rr, 6);
-                assert_eq!(packet.additionals_rr, 2);
+                assert_eq!(packet.header.transaction_id, 0x002b);
+                assert_eq!(packet.header.flags, 0x8180);
+                assert_eq!(packet.header.counts[0], 1);
+                assert_eq!(packet.header.counts[1], 15);
+                assert_eq!(packet.header.counts[2], 6);
+                assert_eq!(packet.header.counts[3], 2);
             },
             Err(e) => panic!("Error parsing DNS packet: {}", e),
         }
