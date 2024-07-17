@@ -2,6 +2,7 @@ use std::{error::Error, fmt};
 mod dns_flags;
 use dns_flags::verify_dns_flags;
 
+#[derive(Debug)]
 pub struct DnsHeader {
     pub transaction_id: u16,
     pub flags: u16,

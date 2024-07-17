@@ -1,15 +1,17 @@
 mod dns_header;
-mod dns_types;
-mod dns_class;
+mod dns_queries;
+mod utils;
 
 use std::{error::Error, fmt};
 use dns_header::DnsHeader;
-use dns_types::DnsType;
-use dns_class::DnsClass;
+use utils::dns_types::DnsType;
+use utils::dns_class::DnsClass;
+use dns_queries::DnsQueries;
 
+#[derive(Debug)]
 pub struct DnsPacket {
     header: DnsHeader,
-    queries: Vec<Query>,
+    queries: DnsQueries,
     answers: Option<Vec<Answer>>,       // List of answer records
     authorities: Option<Vec<AuthoritativeNameServer>>, // List of authority records
     additionals: Option<Vec<AdditionalRecord>>, // List of additional records
@@ -21,7 +23,7 @@ impl TryFrom<&[u8]> for DnsPacket {
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
         let header = DnsHeader::try_from(bytes)?;
-        let queries = Vec::new();
+        let queries = DnsQueries::from_bytes(&bytes[12..],header.counts[0])?;
         let answers = None;
         let authorities = None;
         let additionals = None;
@@ -36,55 +38,7 @@ impl TryFrom<&[u8]> for DnsPacket {
     }
 }
 
-impl fmt::Display for DnsPacket {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "DnsPacket {{ Dns_header: {}",
-            self.header
-        )?;
-        write!(f, ", queries: [")?;
-        for query in &self.queries {
-            write!(f, "{}, ", query)?;
-        }
-        write!(f, "]")?;
-        if let Some(ref answers) = self.answers {
-            write!(f, ", answers: [")?;
-            for answer in answers {
-                write!(f, "{}, ", answer)?;
-            }
-            write!(f, "]")?;
-        }
-        if let Some(ref authorities) = self.authorities {
-            write!(f, ", authorities: [")?;
-            for authority in authorities {
-                write!(f, "{}, ", authority)?;
-            }
-            write!(f, "]")?;
-        }
-        if let Some(ref additionals) = self.additionals {
-            write!(f, ", additionals: [")?;
-            for additional in additionals {
-                write!(f, "{}, ", additional)?;
-            }
-            write!(f, "]")?;
-        }
-        write!(f, " }}")
-    }
-}
 
-#[derive(Debug)]
-struct Query {
-    name: String,               // Domain name
-    query_type: DnsType,        // Type of query (e.g., A, AAAA, MX, etc.)
-    query_class: DnsClass,      // Class of query (typically IN for Internet)
-}
-
-impl fmt::Display for Query {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Query {{ name: {}, query_type: {:?}, query_class: {} }}", self.name, self.query_type, self.query_class)
-    }
-}
 
 // more can be a list of this possible struct (those strcut may on may not be on the liste: "more"): 
 #[derive(Debug)]
@@ -158,7 +112,7 @@ mod tests {
 
         match DnsPacket::try_from(data.as_slice()) {
             Ok(packet) => {
-                println!("{}", packet);
+                println!("{:?}", packet);
                 assert_eq!(packet.header.transaction_id, 0x002b);
                 assert_eq!(packet.header.flags, 0x8180);
                 assert_eq!(packet.header.counts[0], 1);
