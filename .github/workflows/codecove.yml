@@ -15,8 +15,6 @@ jobs:
 
       - name: Build Rust project
         run: cargo build --verbose
-      - name: List project directory contents
-        run: ls /__w/Sonar_cli_app/Sonar_cli_app/target/debug/
 
       - name: Generate code coverage
         run: |

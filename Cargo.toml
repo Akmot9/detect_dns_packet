@@ -2,6 +2,15 @@
 name = "detect_dns_packet"
 version = "0.1.0"
 edition = "2021"
+authors = ["Cyprien Avico <avicocyprien@yahoo.com>"]
+description = "A Rust library to detect DNS packets"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/Akmot9/detect_dns_packet"
+homepage = "https://github.com/Akmot9/detect_dns_packet"
+documentation = "https://docs.rs/detect_dns_packet"
+keywords = ["dns", "parser", "network"]
+categories = ["network-programming", "parsing"]
 
 [dependencies]
 hex = "0.4.3"
@@ -9,8 +18,3 @@ hex = "0.4.3"
 [lib]
 name = "detect_dns_packet"
 path = "src/lib.rs"
-
-
-
-
-
