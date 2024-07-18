@@ -13,15 +13,8 @@ impl DnsQuery {
     pub fn from_bytes(bytes: &[u8], offset: &mut usize) -> Result<Self, Box<dyn Error>> {
         let (name, new_offset) = parse_name(bytes, *offset)?;
         *offset = new_offset;
-        let qtype = DnsType::new(
-            u16::from_be_bytes(
-                [bytes[*offset], 
-                bytes[*offset + 1]]
-            ));
-        let qclass = DnsClass::new(
-            u16::from_be_bytes(
-                [bytes[*offset + 2], 
-                bytes[*offset + 3]]));
+        let qtype = DnsType::new(u16::from_be_bytes([bytes[*offset], bytes[*offset + 1]]));
+        let qclass = DnsClass::new(u16::from_be_bytes([bytes[*offset + 2], bytes[*offset + 3]]));
         *offset += 4;
 
         Ok(DnsQuery {
