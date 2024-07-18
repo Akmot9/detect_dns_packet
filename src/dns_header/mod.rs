@@ -56,11 +56,19 @@ fn validate_and_parse_count(bytes: &[u8]) -> Result<[u16; 4], Box<dyn Error>> {
     let authorities_count = u16::from_be_bytes([bytes[4], bytes[5]]);
     let additionals_count = u16::from_be_bytes([bytes[6], bytes[7]]);
 
-    if questions_count == 0 && (answers_count > 0 || authorities_count > 0 || additionals_count > 0) {
-        return Err("Invalid DNS packet: non-zero resource record counts with zero questions".into());
+    if questions_count == 0 && (answers_count > 0 || authorities_count > 0 || additionals_count > 0)
+    {
+        return Err(
+            "Invalid DNS packet: non-zero resource record counts with zero questions".into(),
+        );
     }
 
-    Ok([questions_count, answers_count, authorities_count, additionals_count])
+    Ok([
+        questions_count,
+        answers_count,
+        authorities_count,
+        additionals_count,
+    ])
 }
 
 #[cfg(test)]
@@ -87,6 +95,16 @@ mod tests {
     }
 
     #[test]
+    fn test_validate_and_parse_count_with_zero_questions() {
+        let invalid_data = vec![0, 0, 0, 1, 0, 1, 0, 1];
+        let result = validate_and_parse_count(&invalid_data);
+        assert!(
+            result.is_err(),
+            "Expected an error due to zero questions and non-zero resource records"
+        );
+    }
+
+    #[test]
     fn test_dns_header_try_from() {
         let data = vec![0, 1, 0, 2, 0, 1, 0, 2, 0, 3, 0, 4];
         let header = DnsHeader::try_from(&data[..]).unwrap();
@@ -96,5 +114,15 @@ mod tests {
 
         let invalid_data = vec![0, 1, 0, 2, 0, 0, 0, 1, 0, 0, 0, 0];
         assert!(DnsHeader::try_from(&invalid_data[..]).is_err());
+    }
+
+    #[test]
+    fn test_dns_header_with_zero_questions() {
+        let invalid_data = vec![0, 1, 0, 2, 0, 0, 0, 1, 0, 1, 0, 1];
+        let result = DnsHeader::try_from(&invalid_data[..]);
+        assert!(
+            result.is_err(),
+            "Expected an error due to zero questions and non-zero resource records"
+        );
     }
 }

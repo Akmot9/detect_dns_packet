@@ -25,11 +25,11 @@ impl fmt::Display for DnsClass {
         write!(
             f,
             "{}",
-            match self {
-                &DnsClasses::IN => "IN", // 1
-                &DnsClasses::CS => "CS", // 2
-                &DnsClasses::CH => "CH", // 3
-                &DnsClasses::HS => "HS", // 4
+            match *self {
+                DnsClasses::IN => "IN", // 1
+                DnsClasses::CS => "CS", // 2
+                DnsClasses::CH => "CH", // 3
+                DnsClasses::HS => "HS", // 4
                 _ => "unknown",
             }
         )

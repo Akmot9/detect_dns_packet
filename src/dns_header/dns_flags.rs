@@ -1,11 +1,11 @@
 /// Verifies the consistency of DNS packet flags.
 ///
-/// DNS packet flags are used to control the behavior of DNS queries and responses. 
-/// The flags are represented by a 16-bit field in the DNS header, where each bit or group of bits 
+/// DNS packet flags are used to control the behavior of DNS queries and responses.
+/// The flags are represented by a 16-bit field in the DNS header, where each bit or group of bits
 /// has a specific meaning. Here's a breakdown of the flags:
 ///
 /// - QR (1 bit): Query/Response. 0 for a query, 1 for a response.
-/// - Opcode (4 bits): Specifies the type of query. Valid values are 0 to 5. 
+/// - Opcode (4 bits): Specifies the type of query. Valid values are 0 to 5.
 ///   - 0: Standard query (QUERY)
 ///   - 1: Inverse query (IQUERY)
 ///   - 2: Server status request (STATUS)
@@ -65,13 +65,16 @@ fn extract_dns_flags(flags: u16) -> (u16, u16, u16, u16, u16, u16, u16, u16) {
     let ra = (flags >> 7) & 0b1;
     let z = (flags >> 4) & 0b111;
     let rcode = flags & 0b1111;
-    println!("qr: {}, opcode: {}, aa: {}, tc: {}, rd: {}, ra: {}, z: {}, rcode: {}", qr, opcode, aa, tc, rd, ra, z, rcode);
+    println!(
+        "qr: {}, opcode: {}, aa: {}, tc: {}, rd: {}, ra: {}, z: {}, rcode: {}",
+        qr, opcode, aa, tc, rd, ra, z, rcode
+    );
     (qr, opcode, aa, tc, rd, ra, z, rcode)
 }
 
 /// Verifies the Z field.
 ///
-/// The Z field is reserved for future use and must always be 0 in both queries and responses. 
+/// The Z field is reserved for future use and must always be 0 in both queries and responses.
 /// If this field is not 0, it indicates an invalid DNS packet.
 ///
 /// # Arguments
@@ -91,7 +94,7 @@ fn verify_z_field(z: u16) -> Result<(), String> {
 
 /// Verifies the opcode field.
 ///
-/// The opcode specifies the type of DNS query. Valid values range from 0 to 5. 
+/// The opcode specifies the type of DNS query. Valid values range from 0 to 5.
 /// Values outside this range are reserved and indicate an invalid DNS packet.
 ///
 /// # Arguments
@@ -104,14 +107,17 @@ fn verify_z_field(z: u16) -> Result<(), String> {
 
 fn verify_opcode(opcode: u16) -> Result<(), String> {
     if opcode > 5 {
-        return Err(format!("Invalid Opcode, must be between 0 and 5. Here it's: {}", opcode));
+        return Err(format!(
+            "Invalid Opcode, must be between 0 and 5. Here it's: {}",
+            opcode
+        ));
     }
     Ok(())
 }
 
 /// Verifies the rcode field.
 ///
-/// The rcode specifies the status of the DNS response. Valid values range from 0 to 5. 
+/// The rcode specifies the status of the DNS response. Valid values range from 0 to 5.
 /// Values outside this range are reserved and indicate an invalid DNS response.
 ///
 /// # Arguments
@@ -124,14 +130,17 @@ fn verify_opcode(opcode: u16) -> Result<(), String> {
 
 fn verify_rcode(rcode: u16) -> Result<(), String> {
     if rcode > 5 {
-        return Err(format!("Invalid RCode, must be between 0 and 5. Here it's: {}", rcode));
+        return Err(format!(
+            "Invalid RCode, must be between 0 and 5. Here it's: {}",
+            rcode
+        ));
     }
     Ok(())
 }
 
 /// Verifies the RA field in queries.
 ///
-/// The RA (Recursion Available) field should be 0 in queries as it is only set in responses. 
+/// The RA (Recursion Available) field should be 0 in queries as it is only set in responses.
 /// If RA is set in a query, it indicates an invalid DNS packet.
 ///
 /// # Arguments
@@ -170,25 +179,52 @@ fn verify_ra_in_query(qr: u16, ra: u16) -> Result<(), String> {
 /// * `Result<(), String>` - Ok(()) if the response flags are valid, Err(message) otherwise.
 
 fn verify_response_flags(opcode: u16, aa: u16, tc: u16, rcode: u16) -> Result<(), String> {
-    println!("opcode: {}, aa: {}, tc: {}, rcode: {}", opcode, aa, tc, rcode);
+    println!(
+        "opcode: {}, aa: {}, tc: {}, rcode: {}",
+        opcode, aa, tc, rcode
+    );
     if opcode == 2 && (aa != 0 || tc != 0) {
-        println!("Opcode {}, AA and TC must be 0 in STATUS responses. Here AA is: {}, TC is: {}",opcode, aa, tc);
-        return Err(format!("AA and TC must be 0 in STATUS responses. Here AA is: {}, TC is: {}", aa, tc));
+        println!(
+            "Opcode {}, AA and TC must be 0 in STATUS responses. Here AA is: {}, TC is: {}",
+            opcode, aa, tc
+        );
+        return Err(format!(
+            "AA and TC must be 0 in STATUS responses. Here AA is: {}, TC is: {}",
+            aa, tc
+        ));
     }
 
     if rcode == 2 && aa != 0 {
-        println!("Rcode {}, AA must be 0 in Server failure responses. Here it's: {}",rcode, aa);
-        return Err(format!("Rcode = 2 so AA must be 0 in Server failure responses. Here it's: {}", aa));
+        println!(
+            "Rcode {}, AA must be 0 in Server failure responses. Here it's: {}",
+            rcode, aa
+        );
+        return Err(format!(
+            "Rcode = 2 so AA must be 0 in Server failure responses. Here it's: {}",
+            aa
+        ));
     }
 
     if rcode == 3 && aa != 1 {
-        println!("Rcode {}, AA must be 0 in Server failure responses. Here it's: {}",rcode, aa);
-        return Err(format!("Rcode = 3 AA must be 1 in Name Error responses. Here it's: {}", aa));
+        println!(
+            "Rcode {}, AA must be 0 in Server failure responses. Here it's: {}",
+            rcode, aa
+        );
+        return Err(format!(
+            "Rcode = 3 AA must be 1 in Name Error responses. Here it's: {}",
+            aa
+        ));
     }
 
     if rcode == 5 && aa != 0 {
-        println!("Rcode {}, AA must be 0 in Server failure responses. Here it's: {}",rcode, aa);
-        return Err(format!("Rcode = 5 AA must be 0 in Refused responses. Here it's: {}", aa));
+        println!(
+            "Rcode {}, AA must be 0 in Server failure responses. Here it's: {}",
+            rcode, aa
+        );
+        return Err(format!(
+            "Rcode = 5 AA must be 0 in Refused responses. Here it's: {}",
+            aa
+        ));
     }
 
     Ok(())
@@ -201,39 +237,72 @@ mod tests {
     #[test]
     fn test_verify_z_field() {
         assert_eq!(verify_z_field(0), Ok(()));
-        assert_eq!(verify_z_field(1), Err("Invalid Z field, must be 0. Here it's: 1".to_string()));
+        assert_eq!(
+            verify_z_field(1),
+            Err("Invalid Z field, must be 0. Here it's: 1".to_string())
+        );
     }
 
     #[test]
     fn test_verify_opcode() {
         assert_eq!(verify_opcode(0), Ok(()));
         assert_eq!(verify_opcode(5), Ok(()));
-        assert_eq!(verify_opcode(6), Err("Invalid Opcode, must be between 0 and 5. Here it's: 6".to_string()));
+        assert_eq!(
+            verify_opcode(6),
+            Err("Invalid Opcode, must be between 0 and 5. Here it's: 6".to_string())
+        );
     }
 
     #[test]
     fn test_verify_rcode() {
         assert_eq!(verify_rcode(0), Ok(()));
         assert_eq!(verify_rcode(5), Ok(()));
-        assert_eq!(verify_rcode(6), Err("Invalid RCode, must be between 0 and 5. Here it's: 6".to_string()));
+        assert_eq!(
+            verify_rcode(6),
+            Err("Invalid RCode, must be between 0 and 5. Here it's: 6".to_string())
+        );
     }
 
     #[test]
     fn test_verify_ra_in_query() {
         assert_eq!(verify_ra_in_query(0, 0), Ok(()));
-        assert_eq!(verify_ra_in_query(0, 1), Err("RA must be 0 in queries. Here it's: 1".to_string()));
+        assert_eq!(
+            verify_ra_in_query(0, 1),
+            Err("RA must be 0 in queries. Here it's: 1".to_string())
+        );
         assert_eq!(verify_ra_in_query(1, 1), Ok(()));
     }
 
     #[test]
     fn test_verify_response_flags() {
         assert_eq!(verify_response_flags(2, 0, 0, 0), Ok(()));
-        assert_eq!(verify_response_flags(2, 1, 0, 0), Err("AA and TC must be 0 in STATUS responses. Here AA is: 1, TC is: 0".to_string()));
-        assert_eq!(verify_response_flags(2, 0, 1, 0), Err("AA and TC must be 0 in STATUS responses. Here AA is: 0, TC is: 1".to_string()));
-        assert_eq!(verify_response_flags(0, 1, 0, 2), Err("Rcode = 2 so AA must be 0 in Server failure responses. Here it's: 1".to_string()));
-        assert_eq!(verify_response_flags(0, 0, 0, 3), Err("Rcode = 3 AA must be 1 in Name Error responses. Here it's: 0".to_string()));
+        assert_eq!(
+            verify_response_flags(2, 1, 0, 0),
+            Err("AA and TC must be 0 in STATUS responses. Here AA is: 1, TC is: 0".to_string())
+        );
+        assert_eq!(
+            verify_response_flags(2, 0, 1, 0),
+            Err("AA and TC must be 0 in STATUS responses. Here AA is: 0, TC is: 1".to_string())
+        );
+        assert_eq!(
+            verify_response_flags(0, 1, 0, 2),
+            Err("Rcode = 2 so AA must be 0 in Server failure responses. Here it's: 1".to_string())
+        );
+        assert_eq!(
+            verify_response_flags(0, 0, 0, 3),
+            Err("Rcode = 3 AA must be 1 in Name Error responses. Here it's: 0".to_string())
+        );
         assert_eq!(verify_response_flags(0, 0, 0, 5), Ok(()));
-        assert_eq!(verify_response_flags(0, 1, 0, 5), Err("Rcode = 5 AA must be 0 in Refused responses. Here it's: 1".to_string()));
+        assert_eq!(
+            verify_response_flags(0, 1, 0, 5),
+            Err("Rcode = 5 AA must be 0 in Refused responses. Here it's: 1".to_string())
+        );
+    }
+
+    #[test]
+    fn test_flags_zero() {
+        let flags: u16 = 0x0000; // All flags set to 0
+        assert_eq!(verify_dns_flags(flags), Ok(flags));
     }
 
     #[test]
@@ -257,31 +326,46 @@ mod tests {
     #[test]
     fn test_invalid_z_field() {
         let flags: u16 = 0x8010; // Z field is not 0
-        assert_eq!(verify_dns_flags(flags), Err("Invalid Z field, must be 0. Here it's: 1".to_string()));
+        assert_eq!(
+            verify_dns_flags(flags),
+            Err("Invalid Z field, must be 0. Here it's: 1".to_string())
+        );
     }
 
     #[test]
     fn test_invalid_opcode() {
         let flags: u16 = 0x7104; // Opcode is 8, which is invalid
-        assert_eq!(verify_dns_flags(flags), Err("Invalid Opcode, must be between 0 and 5. Here it's: 14".to_string()));
+        assert_eq!(
+            verify_dns_flags(flags),
+            Err("Invalid Opcode, must be between 0 and 5. Here it's: 14".to_string())
+        );
     }
 
     #[test]
     fn test_invalid_rcode() {
         let flags: u16 = 0x8006; // RCode is 6, which is invalid
-        assert_eq!(verify_dns_flags(flags), Err("Invalid RCode, must be between 0 and 5. Here it's: 6".to_string()));
+        assert_eq!(
+            verify_dns_flags(flags),
+            Err("Invalid RCode, must be between 0 and 5. Here it's: 6".to_string())
+        );
     }
 
     #[test]
     fn test_ra_in_query() {
         let flags: u16 = 0x0080; // RA is 1 in a query
-        assert_eq!(verify_dns_flags(flags), Err("RA must be 0 in queries. Here it's: 1".to_string()));
+        assert_eq!(
+            verify_dns_flags(flags),
+            Err("RA must be 0 in queries. Here it's: 1".to_string())
+        );
     }
 
     #[test]
     fn test_aa_tc_in_status_response() {
         let flags: u16 = 0x8410; // QR=1, Opcode=2 (STATUS), AA=1, TC=1, invalid
-        assert_eq!(verify_dns_flags(flags), Err("Invalid Z field, must be 0. Here it's: 1".to_string()));
+        assert_eq!(
+            verify_dns_flags(flags),
+            Err("Invalid Z field, must be 0. Here it's: 1".to_string())
+        );
     }
 
     #[test]
@@ -293,7 +377,10 @@ mod tests {
     #[test]
     fn test_aa_in_name_error() {
         let flags: u16 = 0x8183; // QR=1, RCode=3 (Name Error), AA=0, invalid
-        assert_eq!(verify_dns_flags(flags), Err("Rcode = 3 AA must be 1 in Name Error responses. Here it's: 0".to_string()));
+        assert_eq!(
+            verify_dns_flags(flags),
+            Err("Rcode = 3 AA must be 1 in Name Error responses. Here it's: 0".to_string())
+        );
     }
 
     #[test]
@@ -305,7 +392,9 @@ mod tests {
     #[test]
     fn test_random_val() {
         let flags: u16 = 0x9786; // QR=1, RCode=5 (Refused), AA=0, valid
-        assert_eq!(verify_dns_flags(flags), Err("Invalid RCode, must be between 0 and 5. Here it's: 6".to_string()));
+        assert_eq!(
+            verify_dns_flags(flags),
+            Err("Invalid RCode, must be between 0 and 5. Here it's: 6".to_string())
+        );
     }
 }
-

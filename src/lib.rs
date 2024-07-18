@@ -2,20 +2,19 @@ mod dns_header;
 mod dns_queries;
 mod utils;
 
-use std::{error::Error, fmt};
 use dns_header::DnsHeader;
-use utils::dns_types::DnsType;
-use utils::dns_class::DnsClass;
 use dns_queries::DnsQueries;
+use std::{error::Error, fmt};
+use utils::dns_class::DnsClass;
+use utils::dns_types::DnsType;
 
 #[derive(Debug)]
 pub struct DnsPacket {
-    header: DnsHeader,
-    queries: DnsQueries,
-    answers: Option<Vec<Answer>>,       // List of answer records
-    authorities: Option<Vec<AuthoritativeNameServer>>, // List of authority records
-    additionals: Option<Vec<AdditionalRecord>>, // List of additional records
-
+    pub header: DnsHeader,
+    pub queries: DnsQueries,
+    pub answers: Option<Vec<Answer>>, // List of answer records
+    pub authorities: Option<Vec<AuthoritativeNameServer>>, // List of authority records
+    pub additionals: Option<Vec<AdditionalRecord>>, // List of additional records
 }
 
 impl TryFrom<&[u8]> for DnsPacket {
@@ -23,7 +22,7 @@ impl TryFrom<&[u8]> for DnsPacket {
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
         let header = DnsHeader::try_from(bytes)?;
-        let queries = DnsQueries::from_bytes(&bytes[12..],header.counts[0])?;
+        let queries = DnsQueries::from_bytes(&bytes[12..], header.counts[0])?;
         let answers = None;
         let authorities = None;
         let additionals = None;
@@ -38,17 +37,15 @@ impl TryFrom<&[u8]> for DnsPacket {
     }
 }
 
-
-
-// more can be a list of this possible struct (those strcut may on may not be on the liste: "more"): 
+// more can be a list of this possible struct (those strcut may on may not be on the liste: "more"):
 #[derive(Debug)]
-struct Answer {
-    name: String,               // Domain name
-    answer_type: DnsType,       // Type of record (e.g., A, AAAA, MX, etc.)
-    answer_class: DnsClass,     // Class of record (typically IN for Internet)
-    ttl: u32,                   // Time to live
-    data_length: u16,           // Length of the data
-    address: Vec<u8>,           // Address or other data (variable length)
+pub struct Answer {
+    name: String,           // Domain name
+    answer_type: DnsType,   // Type of record (e.g., A, AAAA, MX, etc.)
+    answer_class: DnsClass, // Class of record (typically IN for Internet)
+    ttl: u32,               // Time to live
+    data_length: u16,       // Length of the data
+    address: Vec<u8>,       // Address or other data (variable length)
 }
 
 impl fmt::Display for Answer {
@@ -62,13 +59,13 @@ impl fmt::Display for Answer {
 }
 
 #[derive(Debug)]
-struct AuthoritativeNameServer {
-    name: String,               // Domain name
-    answer_type: DnsType,       // Type of record
-    answer_class: DnsClass,     // Class of record
-    ttl: u32,                   // Time to live
-    data_length: u16,           // Length of the data
-    address: Vec<u8>,           // Address or other data (variable length)
+pub struct AuthoritativeNameServer {
+    name: String,           // Domain name
+    answer_type: DnsType,   // Type of record
+    answer_class: DnsClass, // Class of record
+    ttl: u32,               // Time to live
+    data_length: u16,       // Length of the data
+    address: Vec<u8>,       // Address or other data (variable length)
 }
 
 impl fmt::Display for AuthoritativeNameServer {
@@ -82,13 +79,13 @@ impl fmt::Display for AuthoritativeNameServer {
 }
 
 #[derive(Debug)]
-struct AdditionalRecord {
-    name: String,               // Domain name
-    answer_type: DnsType,       // Type of record
-    answer_class: DnsClass,     // Class of record
-    ttl: u32,                   // Time to live
-    data_length: u16,           // Length of the data
-    address: Vec<u8>,           // Address or other data (variable length)
+pub struct AdditionalRecord {
+    name: String,           // Domain name
+    answer_type: DnsType,   // Type of record
+    answer_class: DnsClass, // Class of record
+    ttl: u32,               // Time to live
+    data_length: u16,       // Length of the data
+    address: Vec<u8>,       // Address or other data (variable length)
 }
 
 impl fmt::Display for AdditionalRecord {
@@ -119,7 +116,7 @@ mod tests {
                 assert_eq!(packet.header.counts[1], 15);
                 assert_eq!(packet.header.counts[2], 6);
                 assert_eq!(packet.header.counts[3], 2);
-            },
+            }
             Err(e) => panic!("Error parsing DNS packet: {}", e),
         }
     }
@@ -131,7 +128,11 @@ mod tests {
 
         match DnsPacket::try_from(data.as_slice()) {
             Ok(_) => panic!("Expected error, but parsing succeeded"),
-            Err(e) => assert!(e.to_string().contains("Invalid Z field, must be 0."), "Unexpected error: {}", e),
+            Err(e) => assert!(
+                e.to_string().contains("Invalid Z field, must be 0."),
+                "Unexpected error: {}",
+                e
+            ),
         }
     }
 }
