@@ -63,6 +63,9 @@ fn parse_name(bytes: &[u8], mut offset: usize) -> Result<(String, usize), Box<dy
             break;
         }
         offset += 1;
+        if offset + len > bytes.len() {
+            return Err("Out of bound parse".into());
+        }
         //println!("Reading label from offset: {} to {}", offset, offset + len);
         let label = String::from_utf8(bytes[offset..offset + len].to_vec())?;
         //println!("Parsed label: {}", label);
