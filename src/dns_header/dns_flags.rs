@@ -65,10 +65,10 @@ fn extract_dns_flags(flags: u16) -> (u16, u16, u16, u16, u16, u16, u16, u16) {
     let ra = (flags >> 7) & 0b1;
     let z = (flags >> 4) & 0b111;
     let rcode = flags & 0b1111;
-    println!(
-        "qr: {}, opcode: {}, aa: {}, tc: {}, rd: {}, ra: {}, z: {}, rcode: {}",
-        qr, opcode, aa, tc, rd, ra, z, rcode
-    );
+    // println!(
+    //     "qr: {}, opcode: {}, aa: {}, tc: {}, rd: {}, ra: {}, z: {}, rcode: {}",
+    //     qr, opcode, aa, tc, rd, ra, z, rcode
+    // );
     (qr, opcode, aa, tc, rd, ra, z, rcode)
 }
 
@@ -179,15 +179,15 @@ fn verify_ra_in_query(qr: u16, ra: u16) -> Result<(), String> {
 /// * `Result<(), String>` - Ok(()) if the response flags are valid, Err(message) otherwise.
 
 fn verify_response_flags(opcode: u16, aa: u16, tc: u16, rcode: u16) -> Result<(), String> {
-    println!(
-        "opcode: {}, aa: {}, tc: {}, rcode: {}",
-        opcode, aa, tc, rcode
-    );
+    // println!(
+    //     "opcode: {}, aa: {}, tc: {}, rcode: {}",
+    //     opcode, aa, tc, rcode
+    // );
     if opcode == 2 && (aa != 0 || tc != 0) {
-        println!(
-            "Opcode {}, AA and TC must be 0 in STATUS responses. Here AA is: {}, TC is: {}",
-            opcode, aa, tc
-        );
+        // println!(
+        //     "Opcode {}, AA and TC must be 0 in STATUS responses. Here AA is: {}, TC is: {}",
+        //     opcode, aa, tc
+        // );
         return Err(format!(
             "AA and TC must be 0 in STATUS responses. Here AA is: {}, TC is: {}",
             aa, tc
@@ -195,10 +195,10 @@ fn verify_response_flags(opcode: u16, aa: u16, tc: u16, rcode: u16) -> Result<()
     }
 
     if rcode == 2 && aa != 0 {
-        println!(
-            "Rcode {}, AA must be 0 in Server failure responses. Here it's: {}",
-            rcode, aa
-        );
+        // println!(
+        //     "Rcode {}, AA must be 0 in Server failure responses. Here it's: {}",
+        //     rcode, aa
+        // );
         return Err(format!(
             "Rcode = 2 so AA must be 0 in Server failure responses. Here it's: {}",
             aa
@@ -206,10 +206,10 @@ fn verify_response_flags(opcode: u16, aa: u16, tc: u16, rcode: u16) -> Result<()
     }
 
     if rcode == 3 && aa != 1 {
-        println!(
-            "Rcode {}, AA must be 0 in Server failure responses. Here it's: {}",
-            rcode, aa
-        );
+        // println!(
+        //     "Rcode {}, AA must be 0 in Server failure responses. Here it's: {}",
+        //     rcode, aa
+        // );
         return Err(format!(
             "Rcode = 3 AA must be 1 in Name Error responses. Here it's: {}",
             aa
@@ -217,10 +217,10 @@ fn verify_response_flags(opcode: u16, aa: u16, tc: u16, rcode: u16) -> Result<()
     }
 
     if rcode == 5 && aa != 0 {
-        println!(
-            "Rcode {}, AA must be 0 in Server failure responses. Here it's: {}",
-            rcode, aa
-        );
+        // println!(
+        //     "Rcode {}, AA must be 0 in Server failure responses. Here it's: {}",
+        //     rcode, aa
+        // );
         return Err(format!(
             "Rcode = 5 AA must be 0 in Refused responses. Here it's: {}",
             aa
