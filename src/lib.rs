@@ -1,6 +1,6 @@
 mod dns_header;
 mod dns_queries;
-mod utils;
+pub mod utils;
 
 use dns_header::DnsHeader;
 use dns_queries::DnsQueries;

@@ -2,7 +2,7 @@ use std::{error::Error, fmt};
 
 use crate::utils::{dns_class::DnsClass, dns_types::DnsType};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct DnsQuery {
     pub name: String,
     pub qtype: DnsType,
@@ -35,7 +35,7 @@ impl fmt::Display for DnsQuery {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct DnsQueries {
     pub queries: Vec<DnsQuery>,
 }
