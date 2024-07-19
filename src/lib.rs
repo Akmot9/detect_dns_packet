@@ -37,6 +37,16 @@ impl TryFrom<&[u8]> for DnsPacket {
     }
 }
 
+impl fmt::Display for DnsPacket {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "DnsPacket {{\n  header: {},\n  queries: {},\n  answers: {:?},\n  authorities: {:?},\n  additionals: {:?}\n}}",
+            self.header, self.queries, self.answers, self.authorities, self.additionals
+        )
+    }
+}
+
 // more can be a list of this possible struct (those strcut may on may not be on the liste: "more"):
 #[derive(Debug)]
 pub struct Answer {
