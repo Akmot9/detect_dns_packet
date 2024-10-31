@@ -38,13 +38,22 @@ impl fmt::Display for DnsQuery {
     }
 }
 
-fn check_dns_query_size(bytes: &[u8], offset: usize, required_size: usize) -> Result<(), Box<dyn Error>> {
+fn check_dns_query_size(
+    bytes: &[u8],
+    offset: usize,
+    required_size: usize,
+) -> Result<(), Box<dyn Error>> {
     if offset + required_size > bytes.len() {
-        return Err(format!("Insufficient data: required {} more bytes at offset {}, but only {} bytes available", required_size, offset, bytes.len() - offset).into());
+        return Err(format!(
+            "Insufficient data: required {} more bytes at offset {}, but only {} bytes available",
+            required_size,
+            offset,
+            bytes.len() - offset
+        )
+        .into());
     }
     Ok(())
 }
-
 
 #[derive(Debug, PartialEq)]
 pub struct DnsQueries {
@@ -56,7 +65,6 @@ impl DnsQueries {
         let mut queries = Vec::with_capacity(count as usize);
         let mut offset = 0;
         for _ in 0..count {
-            
             check_dns_query_size(bytes, offset, 1)?;
 
             queries.push(DnsQuery::from_bytes(bytes, &mut offset)?);

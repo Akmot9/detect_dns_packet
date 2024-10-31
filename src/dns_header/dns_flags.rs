@@ -55,7 +55,6 @@ pub fn verify_dns_flags(flags: u16) -> Result<u16, String> {
 /// # Returns
 ///
 /// * `(u16, u16, u16, u16, u16, u16, u16, u16)` - The extracted flags.
-
 fn extract_dns_flags(flags: u16) -> (u16, u16, u16, u16, u16, u16, u16, u16) {
     let qr = (flags >> 15) & 0b1;
     let opcode = (flags >> 11) & 0b1111;
@@ -104,7 +103,6 @@ fn verify_z_field(z: u16) -> Result<(), String> {
 /// # Returns
 ///
 /// * `Result<(), String>` - Ok(()) if the opcode is valid, Err(message) otherwise.
-
 fn verify_opcode(opcode: u16) -> Result<(), String> {
     if opcode > 5 {
         return Err(format!(
@@ -127,7 +125,6 @@ fn verify_opcode(opcode: u16) -> Result<(), String> {
 /// # Returns
 ///
 /// * `Result<(), String>` - Ok(()) if the rcode is valid, Err(message) otherwise.
-
 fn verify_rcode(rcode: u16) -> Result<(), String> {
     if rcode > 5 {
         return Err(format!(
@@ -151,7 +148,6 @@ fn verify_rcode(rcode: u16) -> Result<(), String> {
 /// # Returns
 ///
 /// * `Result<(), String>` - Ok(()) if the RA field is valid in queries, Err(message) otherwise.
-
 fn verify_ra_in_query(qr: u16, ra: u16) -> Result<(), String> {
     if qr == 0 && ra != 0 {
         return Err(format!("RA must be 0 in queries. Here it's: {}", ra));
@@ -177,7 +173,6 @@ fn verify_ra_in_query(qr: u16, ra: u16) -> Result<(), String> {
 /// # Returns
 ///
 /// * `Result<(), String>` - Ok(()) if the response flags are valid, Err(message) otherwise.
-
 fn verify_response_flags(opcode: u16, aa: u16, tc: u16, rcode: u16) -> Result<(), String> {
     // println!(
     //     "opcode: {}, aa: {}, tc: {}, rcode: {}",
