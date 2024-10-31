@@ -13,6 +13,9 @@ impl DnsQuery {
     pub fn from_bytes(bytes: &[u8], offset: &mut usize) -> Result<Self, Box<dyn Error>> {
         let (name, new_offset) = parse_name(bytes, *offset)?;
         *offset = new_offset;
+
+        check_dns_query_size(bytes, *offset, 4)?;
+
         let qtype = DnsType::new(u16::from_be_bytes([bytes[*offset], bytes[*offset + 1]]));
         let qclass = DnsClass::new(u16::from_be_bytes([bytes[*offset + 2], bytes[*offset + 3]]));
         *offset += 4;
@@ -35,6 +38,14 @@ impl fmt::Display for DnsQuery {
     }
 }
 
+fn check_dns_query_size(bytes: &[u8], offset: usize, required_size: usize) -> Result<(), Box<dyn Error>> {
+    if offset + required_size > bytes.len() {
+        return Err(format!("Insufficient data: required {} more bytes at offset {}, but only {} bytes available", required_size, offset, bytes.len() - offset).into());
+    }
+    Ok(())
+}
+
+
 #[derive(Debug, PartialEq)]
 pub struct DnsQueries {
     pub queries: Vec<DnsQuery>,
@@ -45,6 +56,9 @@ impl DnsQueries {
         let mut queries = Vec::with_capacity(count as usize);
         let mut offset = 0;
         for _ in 0..count {
+            
+            check_dns_query_size(bytes, offset, 1)?;
+
             queries.push(DnsQuery::from_bytes(bytes, &mut offset)?);
         }
         Ok(DnsQueries { queries })

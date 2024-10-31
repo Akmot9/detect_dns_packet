@@ -21,6 +21,8 @@ impl TryFrom<&[u8]> for DnsPacket {
     type Error = Box<dyn Error>;
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        check_dns_minimum_size(bytes)?;
+        
         let header = DnsHeader::try_from(bytes)?;
         let queries = DnsQueries::from_bytes(&bytes[12..], header.counts[0])?;
         let answers = None;
@@ -46,6 +48,17 @@ impl fmt::Display for DnsPacket {
         )
     }
 }
+
+fn check_dns_minimum_size(bytes: &[u8]) -> Result<(), Box<dyn Error>> {
+    const DNS_MINIMUM_SIZE: usize = 12; // Taille minimale pour un en-tête DNS
+    if bytes.len() < DNS_MINIMUM_SIZE {
+        return Err(format!("Insufficient data: expected at least {} bytes, but got {}", DNS_MINIMUM_SIZE, bytes.len()).into());
+    }
+    Ok(())
+}
+
+
+
 
 // more can be a list of this possible struct (those strcut may on may not be on the liste: "more"):
 #[derive(Debug)]
@@ -145,4 +158,20 @@ mod tests {
             ),
         }
     }
+
+    #[test]
+    fn test_ssl_packet_parsing_return_error() {
+        // Example ssl packet data
+        let data = hex::decode("8746a7014094af07a47e9b7f").expect("Invalid hex string");
+
+        match DnsPacket::try_from(data.as_slice()) {
+            Ok(_) => panic!("Expected error, but parsing succeeded"),
+            Err(e) => assert!(
+                e.to_string().contains("required 1 more bytes at offset 0, but only 0 bytes available"),
+                "Unexpected error: {}",
+                e
+            ),
+        }
+    }
+    
 }
