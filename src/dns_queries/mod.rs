@@ -96,9 +96,9 @@ impl fmt::Display for DnsQueries {
 /// - `offset`: Position de départ dans `bytes` pour le parsing du nom de domaine.
 ///
 /// # Returns
-/// - `Ok((String, usize))` : Un tuple contenant le nom de domaine sous forme de chaîne de caractères 
+/// - `Ok((String, usize))` : Un tuple contenant le nom de domaine sous forme de chaîne de caractères
 ///   et la nouvelle valeur d'offset après le parsing.
-/// - `Err(DnsQueryParseError)` : Retourne une erreur si les données sont insuffisantes ou 
+/// - `Err(DnsQueryParseError)` : Retourne une erreur si les données sont insuffisantes ou
 ///   si une erreur de conversion UTF-8 survient.
 ///
 /// # Errors
@@ -143,8 +143,6 @@ fn parse_name(bytes: &[u8], mut offset: usize) -> Result<(String, usize), DnsQue
     Ok((name, offset)) // Retourne le nom et la nouvelle position de l'offset
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -169,7 +167,7 @@ mod tests {
             0x02, 0xFF, 0xFF, // Invalid UTF-8 bytes
             0x00, // Null terminator
         ];
-        
+
         let result = parse_name(&data, 0);
         assert!(result.is_err());
         if let Err(DnsQueryParseError::Utf8Error(_)) = result {

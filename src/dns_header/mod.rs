@@ -48,7 +48,11 @@ fn check_packet_length(bytes: &[u8]) -> Result<(), Box<dyn Error>> {
     if bytes.len() < 12 {
         return Err("Too short to be a DNS packet".into());
     }
-    println!("try_from for dns_header: bytes: {:?}, len: {}", bytes, bytes.len());
+    println!(
+        "try_from for dns_header: bytes: {:?}, len: {}",
+        bytes,
+        bytes.len()
+    );
     Ok(())
 }
 
