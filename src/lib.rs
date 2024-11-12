@@ -135,7 +135,7 @@ mod tests {
 
         match DnsPacket::try_from(data.as_slice()) {
             Ok(packet) => {
-                println!("{:?}", packet);
+                // println!("{:?}", packet);
                 assert_eq!(packet.header.transaction_id, 0x002b);
                 assert_eq!(packet.header.flags, 0x8180);
                 assert_eq!(packet.header.counts[0], 1);

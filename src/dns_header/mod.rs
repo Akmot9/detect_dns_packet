@@ -16,9 +16,9 @@ impl TryFrom<&[u8]> for DnsHeader {
         check_packet_length(bytes)?;
 
         let transaction_id = u16::from_be_bytes([bytes[0], bytes[1]]);
-        println!("transaction_id: {}", transaction_id);
+        // println!("transaction_id: {}", transaction_id);
         let flags = verify_dns_flags(u16::from_be_bytes([bytes[2], bytes[3]]))?;
-        println!("flags: {}", flags);
+        // println!("flags: {}", flags);
         let counts = validate_and_parse_count(&bytes[4..12])?;
         // println!("transaction_id: {}, flags: {}, counts: {:?}", transaction_id, flags, counts);
         Ok(Self {
@@ -48,11 +48,11 @@ fn check_packet_length(bytes: &[u8]) -> Result<(), Box<dyn Error>> {
     if bytes.len() < 12 {
         return Err("Too short to be a DNS packet".into());
     }
-    println!(
-        "try_from for dns_header: bytes: {:?}, len: {}",
-        bytes,
-        bytes.len()
-    );
+    // println!(
+    //     "try_from for dns_header: bytes: {:?}, len: {}",
+    //     bytes,
+    //     bytes.len()
+    // );
     Ok(())
 }
 

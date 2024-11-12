@@ -64,11 +64,11 @@ pub struct DnsQueries {
 
 impl DnsQueries {
     pub fn from_bytes(bytes: &[u8], count: u16) -> Result<Self, Box<dyn Error>> {
-        println!("bytes: {:?}", bytes);
-        println!("bytes len: {}", bytes.len());
-        println!("count: {}", count);
+        // println!("bytes: {:?}", bytes);
+        // println!("bytes len: {}", bytes.len());
+        // println!("count: {}", count);
         let mut queries = Vec::with_capacity(count as usize);
-        println!("queries count: {:?}", queries);
+        // println!("queries count: {:?}", queries);
         let mut offset = 0;
         for _ in 0..count {
             check_dns_query_size(bytes, offset, 1)?;
