@@ -1,6 +1,8 @@
-use std::{error::Error, fmt};
+use std::fmt;
 mod dns_flags;
 use dns_flags::verify_dns_flags;
+use errors::DnsHeaderError;
+pub(crate) mod errors;
 
 #[derive(Debug)]
 pub struct DnsHeader {
@@ -10,7 +12,7 @@ pub struct DnsHeader {
 }
 
 impl TryFrom<&[u8]> for DnsHeader {
-    type Error = Box<dyn Error>;
+    type Error = DnsHeaderError;
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
         check_packet_length(bytes)?;
@@ -44,19 +46,14 @@ impl fmt::Display for DnsHeader {
     }
 }
 
-fn check_packet_length(bytes: &[u8]) -> Result<(), Box<dyn Error>> {
+fn check_packet_length(bytes: &[u8]) -> Result<(), DnsHeaderError> {
     if bytes.len() < 12 {
-        return Err("Too short to be a DNS packet".into());
+        return Err(DnsHeaderError::PacketTooShort);
     }
-    // println!(
-    //     "try_from for dns_header: bytes: {:?}, len: {}",
-    //     bytes,
-    //     bytes.len()
-    // );
     Ok(())
 }
 
-fn validate_and_parse_count(bytes: &[u8]) -> Result<[u16; 4], Box<dyn Error>> {
+fn validate_and_parse_count(bytes: &[u8]) -> Result<[u16; 4], DnsHeaderError> {
     let questions_count = u16::from_be_bytes([bytes[0], bytes[1]]);
     let answers_count = u16::from_be_bytes([bytes[2], bytes[3]]);
     let authorities_count = u16::from_be_bytes([bytes[4], bytes[5]]);
@@ -64,9 +61,7 @@ fn validate_and_parse_count(bytes: &[u8]) -> Result<[u16; 4], Box<dyn Error>> {
 
     if questions_count == 0 && (answers_count > 0 || authorities_count > 0 || additionals_count > 0)
     {
-        return Err(
-            "Invalid DNS packet: non-zero resource record counts with zero questions".into(),
-        );
+        return Err(DnsHeaderError::InvalidCounts);
     }
 
     Ok([

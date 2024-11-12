@@ -1,13 +1,18 @@
+mod dns_additional;
+mod dns_answers;
+mod dns_authoritative;
 mod dns_header;
 mod dns_queries;
 pub mod utils;
 
+use dns_additional::AdditionalRecord;
+use dns_answers::Answer;
+use dns_authoritative::AuthoritativeNameServer;
 use dns_header::DnsHeader;
 use dns_queries::DnsQueries;
 use errors::DnsPacketError;
-use std::{error::Error, fmt};
-use utils::dns_class::DnsClass;
-use utils::dns_types::DnsType;
+use std::fmt;
+mod errors;
 
 #[derive(Debug)]
 pub struct DnsPacket {
@@ -19,7 +24,7 @@ pub struct DnsPacket {
 }
 
 impl TryFrom<&[u8]> for DnsPacket {
-    type Error = Box<dyn Error>;
+    type Error = DnsPacketError;
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
         check_dns_minimum_size(bytes)?;
@@ -40,18 +45,6 @@ impl TryFrom<&[u8]> for DnsPacket {
     }
 }
 
-impl fmt::Display for DnsPacket {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "DnsPacket {{\n  header: {},\n  queries: {},\n  answers: {:?},\n  authorities: {:?},\n  additionals: {:?}\n}}",
-            self.header, self.queries, self.answers, self.authorities, self.additionals
-        )
-    }
-}
-
-mod errors;
-
 fn check_dns_minimum_size(bytes: &[u8]) -> Result<(), DnsPacketError> {
     const DNS_MINIMUM_SIZE: usize = 12; // Taille minimale pour un en-tête DNS
     if bytes.len() < DNS_MINIMUM_SIZE {
@@ -63,63 +56,12 @@ fn check_dns_minimum_size(bytes: &[u8]) -> Result<(), DnsPacketError> {
     Ok(())
 }
 
-// more can be a list of this possible struct (those strcut may on may not be on the liste: "more"):
-#[derive(Debug)]
-pub struct Answer {
-    name: String,           // Domain name
-    answer_type: DnsType,   // Type of record (e.g., A, AAAA, MX, etc.)
-    answer_class: DnsClass, // Class of record (typically IN for Internet)
-    ttl: u32,               // Time to live
-    data_length: u16,       // Length of the data
-    address: Vec<u8>,       // Address or other data (variable length)
-}
-
-impl fmt::Display for Answer {
+impl fmt::Display for DnsPacket {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Answer {{ name: {}, answer_type: {}, answer_class: {}, ttl: {}, data_length: {}, address: {:?} }}",
-            self.name, self.answer_type, self.answer_class, self.ttl, self.data_length, self.address
-        )
-    }
-}
-
-#[derive(Debug)]
-pub struct AuthoritativeNameServer {
-    name: String,           // Domain name
-    answer_type: DnsType,   // Type of record
-    answer_class: DnsClass, // Class of record
-    ttl: u32,               // Time to live
-    data_length: u16,       // Length of the data
-    address: Vec<u8>,       // Address or other data (variable length)
-}
-
-impl fmt::Display for AuthoritativeNameServer {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "AuthoritativeNameServer {{ name: {}, answer_type: {}, answer_class: {}, ttl: {}, data_length: {}, address: {:?} }}",
-            self.name, self.answer_type, self.answer_class, self.ttl, self.data_length, self.address
-        )
-    }
-}
-
-#[derive(Debug)]
-pub struct AdditionalRecord {
-    name: String,           // Domain name
-    answer_type: DnsType,   // Type of record
-    answer_class: DnsClass, // Class of record
-    ttl: u32,               // Time to live
-    data_length: u16,       // Length of the data
-    address: Vec<u8>,       // Address or other data (variable length)
-}
-
-impl fmt::Display for AdditionalRecord {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "AdditionalRecord {{ name: {}, answer_type: {}, answer_class: {}, ttl: {}, data_length: {}, address: {:?} }}",
-            self.name, self.answer_type, self.answer_class, self.ttl, self.data_length, self.address
+            "DnsPacket {{\n  header: {},\n  queries: {},\n  answers: {:?},\n  authorities: {:?},\n  additionals: {:?}\n}}",
+            self.header, self.queries, self.answers, self.authorities, self.additionals
         )
     }
 }

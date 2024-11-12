@@ -1,9 +1,53 @@
-use std::{error::Error, fmt};
+use std::fmt;
 
 use errors::DnsQueryParseError;
 
 use crate::utils::{dns_class::DnsClass, dns_types::DnsType};
-mod errors;
+
+pub(crate) mod errors;
+
+#[derive(Debug, PartialEq)]
+pub struct DnsQueries {
+    pub queries: Vec<DnsQuery>,
+}
+
+impl DnsQueries {
+    pub fn from_bytes(bytes: &[u8], count: u16) -> Result<Self, DnsQueryParseError> {
+        let mut queries = Vec::with_capacity(count as usize);
+        let mut offset = 0;
+        for _ in 0..count {
+            check_dns_query_size(bytes, offset, 1)?;
+            queries.push(DnsQuery::from_bytes(bytes, &mut offset)?);
+        }
+        Ok(DnsQueries { queries })
+    }
+}
+
+fn check_dns_query_size(
+    bytes: &[u8],
+    offset: usize,
+    required_size: usize,
+) -> Result<(), DnsQueryParseError> {
+    if offset + required_size > bytes.len() {
+        return Err(DnsQueryParseError::InsufficientData {
+            required: required_size,
+            offset,
+            available: bytes.len() - offset,
+        });
+    }
+    Ok(())
+}
+
+impl fmt::Display for DnsQueries {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "DnsQueries {{ queries: [")?;
+        for query in &self.queries {
+            write!(f, " {},", query)?;
+        }
+        write!(f, "] }}")
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct DnsQuery {
     pub name: String,
@@ -12,7 +56,7 @@ pub struct DnsQuery {
 }
 
 impl DnsQuery {
-    pub fn from_bytes(bytes: &[u8], offset: &mut usize) -> Result<Self, Box<dyn Error>> {
+    pub fn from_bytes(bytes: &[u8], offset: &mut usize) -> Result<Self, DnsQueryParseError> {
         let (name, new_offset) = parse_name(bytes, *offset)?;
         *offset = new_offset;
 
@@ -37,55 +81,6 @@ impl fmt::Display for DnsQuery {
             "DnsQuery {{ name: {}, qtype: {}, qclass: {} }}",
             self.name, self.qtype, self.qclass
         )
-    }
-}
-
-fn check_dns_query_size(
-    bytes: &[u8],
-    offset: usize,
-    required_size: usize,
-) -> Result<(), Box<dyn Error>> {
-    if offset + required_size > bytes.len() {
-        return Err(format!(
-            "Insufficient data: required {} more bytes at offset {}, but only {} bytes available",
-            required_size,
-            offset,
-            bytes.len() - offset
-        )
-        .into());
-    }
-    Ok(())
-}
-
-#[derive(Debug, PartialEq)]
-pub struct DnsQueries {
-    pub queries: Vec<DnsQuery>,
-}
-
-impl DnsQueries {
-    pub fn from_bytes(bytes: &[u8], count: u16) -> Result<Self, Box<dyn Error>> {
-        // println!("bytes: {:?}", bytes);
-        // println!("bytes len: {}", bytes.len());
-        // println!("count: {}", count);
-        let mut queries = Vec::with_capacity(count as usize);
-        // println!("queries count: {:?}", queries);
-        let mut offset = 0;
-        for _ in 0..count {
-            check_dns_query_size(bytes, offset, 1)?;
-
-            queries.push(DnsQuery::from_bytes(bytes, &mut offset)?);
-        }
-        Ok(DnsQueries { queries })
-    }
-}
-
-impl fmt::Display for DnsQueries {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "DnsQueries {{ queries: [")?;
-        for query in &self.queries {
-            write!(f, " {},", query)?;
-        }
-        write!(f, "] }}")
     }
 }
 
