@@ -1,6 +1,6 @@
 /target
 integration_test/target
-
+integration_test/fuzz_testing/target
 *.lock
 integration_test/Cargo.lock
 Cargo.lock
