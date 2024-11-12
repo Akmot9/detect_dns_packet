@@ -4,6 +4,7 @@ pub mod utils;
 
 use dns_header::DnsHeader;
 use dns_queries::DnsQueries;
+use errors::DnsPacketError;
 use std::{error::Error, fmt};
 use utils::dns_class::DnsClass;
 use utils::dns_types::DnsType;
@@ -49,15 +50,15 @@ impl fmt::Display for DnsPacket {
     }
 }
 
-fn check_dns_minimum_size(bytes: &[u8]) -> Result<(), Box<dyn Error>> {
+mod errors; 
+
+ fn check_dns_minimum_size(bytes: &[u8]) -> Result<(), DnsPacketError> {
     const DNS_MINIMUM_SIZE: usize = 12; // Taille minimale pour un en-tête DNS
     if bytes.len() < DNS_MINIMUM_SIZE {
-        return Err(format!(
-            "Insufficient data: expected at least {} bytes, but got {}",
-            DNS_MINIMUM_SIZE,
-            bytes.len()
-        )
-        .into());
+        return Err(DnsPacketError::InsufficientData {
+            expected: DNS_MINIMUM_SIZE,
+            actual: bytes.len(),
+        });
     }
     Ok(())
 }
@@ -176,4 +177,41 @@ mod tests {
             ),
         }
     }
+
+    #[test]
+    fn test_rtcp_packet_parsing_return_error() {
+        // Payload RTCP en hexadécimal
+        let data = hex::decode("89cc00076f4c712d44434e53515445524d5f50494e473a3035343a3031360000")
+            .expect("Invalid hex string");
+    
+        match DnsPacket::try_from(data.as_slice()) {
+            Ok(_) => panic!("Expected error, but parsing succeeded"),
+            Err(e) => assert!(
+                e.to_string().contains("Invalid RCode, must be between 0 and 5"),
+                "Unexpected error: {}",
+                e
+            ),
+        }
+    }
+
+    #[test]
+    fn test_check_dns_minimum_size_insufficient_data() {
+        let data = vec![0; 10]; // Seulement 10 octets, donc insuffisant pour un paquet DNS
+        let result = check_dns_minimum_size(&data);
+        assert!(result.is_err());
+        if let Err(DnsPacketError::InsufficientData { expected, actual }) = result {
+            assert_eq!(expected, 12);
+            assert_eq!(actual, 10);
+        } else {
+            panic!("Expected DnsPacketError::InsufficientData, but got {:?}", result);
+        }
+    }
+
+    #[test]
+    fn test_check_dns_minimum_size_sufficient_data() {
+        let data = vec![0; 12]; // Exactement 12 octets, ce qui est suffisant
+        let result = check_dns_minimum_size(&data);
+        assert!(result.is_ok());
+    }
+
 }

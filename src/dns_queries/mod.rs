@@ -1,7 +1,9 @@
 use std::{error::Error, fmt};
 
-use crate::utils::{dns_class::DnsClass, dns_types::DnsType};
+use errors::DnsQueryParseError;
 
+use crate::utils::{dns_class::DnsClass, dns_types::DnsType};
+mod errors;
 #[derive(Debug, PartialEq)]
 pub struct DnsQuery {
     pub name: String,
@@ -62,7 +64,11 @@ pub struct DnsQueries {
 
 impl DnsQueries {
     pub fn from_bytes(bytes: &[u8], count: u16) -> Result<Self, Box<dyn Error>> {
+        println!("bytes: {:?}", bytes);
+        println!("bytes len: {}", bytes.len());
+        println!("count: {}", count);
         let mut queries = Vec::with_capacity(count as usize);
+        println!("queries count: {:?}", queries);
         let mut offset = 0;
         for _ in 0..count {
             check_dns_query_size(bytes, offset, 1)?;
@@ -83,33 +89,61 @@ impl fmt::Display for DnsQueries {
     }
 }
 
-fn parse_name(bytes: &[u8], mut offset: usize) -> Result<(String, usize), Box<dyn Error>> {
-    let mut labels = Vec::new();
-    //println!("Initial offset: {}", offset);
+/// Parse un nom de domaine à partir d'un tableau d'octets, en suivant le format DNS.
+///
+/// # Arguments
+/// - `bytes`: Référence à un tableau d'octets représentant le message DNS.
+/// - `offset`: Position de départ dans `bytes` pour le parsing du nom de domaine.
+///
+/// # Returns
+/// - `Ok((String, usize))` : Un tuple contenant le nom de domaine sous forme de chaîne de caractères 
+///   et la nouvelle valeur d'offset après le parsing.
+/// - `Err(DnsQueryParseError)` : Retourne une erreur si les données sont insuffisantes ou 
+///   si une erreur de conversion UTF-8 survient.
+///
+/// # Errors
+/// - `DnsQueryParseError::OutOfBoundParse` si les données ne contiennent pas assez d'octets pour un parsing correct.
+/// - `DnsQueryParseError::Utf8Error` si les données ne sont pas des chaînes UTF-8 valides.
+fn parse_name(bytes: &[u8], mut offset: usize) -> Result<(String, usize), DnsQueryParseError> {
+    let mut labels = Vec::new(); // Stocke chaque label extrait du nom de domaine
+
     loop {
+        // Vérifie que l'offset ne dépasse pas la longueur du tableau, sinon retourne une erreur
+        if offset >= bytes.len() {
+            return Err(DnsQueryParseError::OutOfBoundParse);
+        }
+
+        // Lit la longueur du prochain label (octet actuel)
         let len = bytes[offset] as usize;
-        //println!("Length of next label: {}", len);
+
+        // Si la longueur est 0, le nom est terminé ; on avance l'offset d'un octet pour finir
         if len == 0 {
             offset += 1;
-            //println!("Encountered zero length, incremented offset to: {}", offset);
             break;
         }
+
+        // Avance l'offset d'un octet pour pointer au début du label
         offset += 1;
+
+        // Vérifie que le label complet est dans les limites de `bytes`, sinon retourne une erreur
         if offset + len > bytes.len() {
-            return Err("Out of bound parse".into());
+            return Err(DnsQueryParseError::OutOfBoundParse);
         }
-        //println!("Reading label from offset: {} to {}", offset, offset + len);
+
+        // Convertit le label en UTF-8 ; retourne une erreur si la conversion échoue
         let label = String::from_utf8(bytes[offset..offset + len].to_vec())?;
-        //println!("Parsed label: {}", label);
-        labels.push(label);
+        labels.push(label); // Ajoute le label à la liste
+
+        // Avance l'offset de la longueur du label pour traiter le suivant
         offset += len;
-        //println!("Updated offset after reading label: {}", offset);
     }
+
+    // Joint tous les labels avec des points pour former le nom complet
     let name = labels.join(".");
-    //println!("Final parsed name: {}", name);
-    //println!("Final offset: {}", offset);
-    Ok((name, offset))
+    Ok((name, offset)) // Retourne le nom et la nouvelle position de l'offset
 }
+
+
 
 #[cfg(test)]
 mod tests {
@@ -126,6 +160,23 @@ mod tests {
         let (name, offset) = parse_name(&data, 0).unwrap();
         assert_eq!(name, "www.google.com");
         assert_eq!(offset, 16);
+    }
+
+    #[test]
+    fn test_parse_name_invalid_utf8() {
+        // This data includes bytes that do not form valid UTF-8 sequences for labels.
+        let data = vec![
+            0x02, 0xFF, 0xFF, // Invalid UTF-8 bytes
+            0x00, // Null terminator
+        ];
+        
+        let result = parse_name(&data, 0);
+        assert!(result.is_err());
+        if let Err(DnsQueryParseError::Utf8Error(_)) = result {
+            // Passed: The error is as expected.
+        } else {
+            panic!("Expected Utf8Error, but got {:?}", result);
+        }
     }
 
     #[test]
